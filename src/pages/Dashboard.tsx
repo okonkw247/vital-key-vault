@@ -205,7 +205,9 @@ function KeyCard({ k }: { k: ApiKey }) {
   };
   const onCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await navigator.clipboard.writeText(k.api_key);
+    const { data, error } = await supabase.functions.invoke("reveal-key", { body: { key_id: k.id } });
+    if (error || !data?.key) { toast.error("Could not reveal key"); return; }
+    await navigator.clipboard.writeText(data.key as string);
     toast.success("Copied to clipboard");
   };
   const onDelete = async (e: React.MouseEvent) => {
@@ -244,7 +246,7 @@ function KeyCard({ k }: { k: ApiKey }) {
         <Badge variant="outline" className="my-2 text-[10px]">Free tier</Badge>
       )}
 
-      <div className="mono mt-2 truncate rounded bg-secondary/60 px-2 py-1 text-xs text-muted-foreground">{maskKey(k.api_key)}</div>
+      <div className="mono mt-2 truncate rounded bg-secondary/60 px-2 py-1 text-xs text-muted-foreground">•••• encrypted at rest ••••</div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
         <span>checked {timeAgo(k.last_checked)}</span>
