@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { maskKey, statusBg, statusColor, timeAgo } from "@/lib/format";
 import type { Tables } from "@/integrations/supabase/types";
+import Analytics from "@/components/Analytics";
 
 type ApiKey = Tables<"api_keys">;
 
@@ -85,6 +86,9 @@ export default function Dashboard() {
         <StatCard icon={<AlertTriangle className="h-4 w-4" />} label="Errors" value={stats.error} accent="text-destructive" />
         <StatCard icon={<HelpCircle className="h-4 w-4" />} label="Unknown" value={stats.unknown} accent="text-muted-foreground" />
       </section>
+
+      {/* Analytics */}
+      <Analytics />
 
       {/* Filters */}
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -201,7 +205,9 @@ function KeyCard({ k }: { k: ApiKey }) {
   };
   const onCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    await navigator.clipboard.writeText(k.api_key);
+    const { data, error } = await supabase.functions.invoke("reveal-key", { body: { key_id: k.id } });
+    if (error || !data?.key) { toast.error("Could not reveal key"); return; }
+    await navigator.clipboard.writeText(data.key as string);
     toast.success("Copied to clipboard");
   };
   const onDelete = async (e: React.MouseEvent) => {
@@ -240,7 +246,7 @@ function KeyCard({ k }: { k: ApiKey }) {
         <Badge variant="outline" className="my-2 text-[10px]">Free tier</Badge>
       )}
 
-      <div className="mono mt-2 truncate rounded bg-secondary/60 px-2 py-1 text-xs text-muted-foreground">{maskKey(k.api_key)}</div>
+      <div className="mono mt-2 truncate rounded bg-secondary/60 px-2 py-1 text-xs text-muted-foreground">•••• encrypted at rest ••••</div>
 
       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
         <span>checked {timeAgo(k.last_checked)}</span>

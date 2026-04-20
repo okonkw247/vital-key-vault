@@ -62,12 +62,11 @@ export default function ImportKeys() {
       valid.push(r);
     }
 
-    // Existing keys (dedup)
-    const { data: existing } = await supabase.from("api_keys").select("api_key").eq("owner_github", github.username);
-    const existingSet = new Set((existing ?? []).map((x) => x.api_key));
+    // Dedup within this batch only (api_key column is encrypted at rest, so we can't
+    // compare ciphertext directly — cross-batch duplicates should be cleaned up manually).
     const seen = new Set<string>();
     const toInsert = valid.filter((r) => {
-      if (existingSet.has(r.api_key) || seen.has(r.api_key)) return false;
+      if (seen.has(r.api_key)) return false;
       seen.add(r.api_key); return true;
     });
     const skipped = valid.length - toInsert.length;

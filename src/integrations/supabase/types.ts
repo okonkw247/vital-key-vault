@@ -17,6 +17,8 @@ export type Database = {
       api_keys: {
         Row: {
           api_key: string
+          api_key_encrypted: string | null
+          api_key_nonce: string | null
           category: string
           created_at: string
           credits_limit: number | null
@@ -32,6 +34,8 @@ export type Database = {
         }
         Insert: {
           api_key: string
+          api_key_encrypted?: string | null
+          api_key_nonce?: string | null
           category?: string
           created_at?: string
           credits_limit?: number | null
@@ -47,6 +51,8 @@ export type Database = {
         }
         Update: {
           api_key?: string
+          api_key_encrypted?: string | null
+          api_key_nonce?: string | null
           category?: string
           created_at?: string
           credits_limit?: number | null
@@ -61,6 +67,47 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      key_credit_snapshots: {
+        Row: {
+          created_at: string
+          credits_limit: number | null
+          credits_remaining: number | null
+          id: string
+          key_id: string
+          owner_github: string
+          provider: string
+          snapshot_date: string
+        }
+        Insert: {
+          created_at?: string
+          credits_limit?: number | null
+          credits_remaining?: number | null
+          id?: string
+          key_id: string
+          owner_github: string
+          provider: string
+          snapshot_date?: string
+        }
+        Update: {
+          created_at?: string
+          credits_limit?: number | null
+          credits_remaining?: number | null
+          id?: string
+          key_id?: string
+          owner_github?: string
+          provider?: string
+          snapshot_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_credit_snapshots_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       key_events: {
         Row: {
@@ -183,6 +230,7 @@ export type Database = {
           created_at: string
           health_check_minutes: number
           id: string
+          last_cron_check: string | null
           owner_github: string
           webhook_urls: Json
         }
@@ -191,6 +239,7 @@ export type Database = {
           created_at?: string
           health_check_minutes?: number
           id?: string
+          last_cron_check?: string | null
           owner_github: string
           webhook_urls?: Json
         }
@@ -199,6 +248,7 @@ export type Database = {
           created_at?: string
           health_check_minutes?: number
           id?: string
+          last_cron_check?: string | null
           owner_github?: string
           webhook_urls?: Json
         }
@@ -210,6 +260,15 @@ export type Database = {
     }
     Functions: {
       current_github_username: { Args: never; Returns: string }
+      decrypt_api_key: { Args: { ct: string; n: string }; Returns: string }
+      encrypt_api_key: {
+        Args: { plain: string }
+        Returns: {
+          ciphertext: string
+          nonce: string
+        }[]
+      }
+      vault_get_key: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

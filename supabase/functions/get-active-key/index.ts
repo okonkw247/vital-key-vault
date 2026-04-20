@@ -1,4 +1,5 @@
 // Public endpoint that returns the user's current best active key for a provider.
+// Decrypts api_key inside the edge function only.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -30,10 +31,9 @@ Deno.serve(async (req) => {
     });
   }
 
-  // case-insensitive provider match
   const { data: keys, error } = await admin
     .from("api_keys")
-    .select("api_key, credits_remaining, status, provider")
+    .select("api_key_encrypted, api_key_nonce, credits_remaining, status, provider")
     .eq("owner_github", tok.owner_github)
     .eq("status", "active")
     .ilike("provider", provider)
@@ -50,8 +50,14 @@ Deno.serve(async (req) => {
     });
   }
   const k = keys[0];
+  const { data: plain, error: decErr } = await admin.rpc("decrypt_api_key", { ct: k.api_key_encrypted, n: k.api_key_nonce });
+  if (decErr || !plain) {
+    return new Response(JSON.stringify({ error: "Decryption failed" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
   return new Response(JSON.stringify({
-    key: k.api_key,
+    key: plain,
     credits_remaining: k.credits_remaining,
     status: k.status,
     provider: k.provider,
