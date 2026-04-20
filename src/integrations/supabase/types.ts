@@ -14,13 +14,202 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_keys: {
+        Row: {
+          api_key: string
+          category: string
+          created_at: string
+          credits_limit: number | null
+          credits_remaining: number | null
+          id: string
+          is_free_tier: boolean | null
+          key_name: string
+          last_checked: string | null
+          notes: string | null
+          owner_github: string
+          provider: string
+          status: string
+        }
+        Insert: {
+          api_key: string
+          category?: string
+          created_at?: string
+          credits_limit?: number | null
+          credits_remaining?: number | null
+          id?: string
+          is_free_tier?: boolean | null
+          key_name: string
+          last_checked?: string | null
+          notes?: string | null
+          owner_github: string
+          provider?: string
+          status?: string
+        }
+        Update: {
+          api_key?: string
+          category?: string
+          created_at?: string
+          credits_limit?: number | null
+          credits_remaining?: number | null
+          id?: string
+          is_free_tier?: boolean | null
+          key_name?: string
+          last_checked?: string | null
+          notes?: string | null
+          owner_github?: string
+          provider?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      key_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          key_id: string
+          message: string | null
+          owner_github: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          key_id: string
+          message?: string | null
+          owner_github: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          key_id?: string
+          message?: string | null
+          owner_github?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "key_events_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          key_id: string | null
+          owner_github: string
+          read: boolean
+          title: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          key_id?: string | null
+          owner_github: string
+          read?: boolean
+          title: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          key_id?: string | null
+          owner_github?: string
+          read?: boolean
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "key_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repo_key_links: {
+        Row: {
+          created_at: string
+          id: string
+          key_id: string | null
+          owner_github: string
+          repo_name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_id?: string | null
+          owner_github: string
+          repo_name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_id?: string | null
+          owner_github?: string
+          repo_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repo_key_links_key_id_fkey"
+            columns: ["key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          health_check_minutes: number
+          id: string
+          owner_github: string
+          webhook_urls: Json
+        }
+        Insert: {
+          access_token?: string
+          created_at?: string
+          health_check_minutes?: number
+          id?: string
+          owner_github: string
+          webhook_urls?: Json
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          health_check_minutes?: number
+          id?: string
+          owner_github?: string
+          webhook_urls?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_github_username: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
