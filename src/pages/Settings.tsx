@@ -71,7 +71,7 @@ export default function Settings() {
             <SelectItem value="60">Every 60 minutes</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">Background scheduler runs every 30 min by default. This preference is stored for future per-user scheduling.</p>
+        <p className="text-xs text-muted-foreground">Per-user scheduling — your keys are checked at this exact frequency by background cron jobs (15 / 30 / 60 minute buckets).</p>
       </section>
 
       <section className="vault-card p-5 space-y-3">

@@ -24,6 +24,8 @@ export default function KeyDetail() {
   const [key, setKey] = useState<ApiKey | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [show, setShow] = useState(false);
+  const [revealed, setRevealed] = useState<string | null>(null);
+  const [revealing, setRevealing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [newKey, setNewKey] = useState("");
@@ -67,7 +69,7 @@ export default function KeyDetail() {
     const { error } = await supabase.from("api_keys").update({ api_key: newKey.trim(), status: "unknown", credits_remaining: null, last_checked: null }).eq("id", key.id);
     if (error) { toast.error(error.message); return; }
     await supabase.from("key_events").insert({ key_id: key.id, owner_github: key.owner_github, event_type: "replaced", message: "Key value replaced" });
-    setReplaceOpen(false); setNewKey("");
+    setReplaceOpen(false); setNewKey(""); setRevealed(null); setShow(false);
     supabase.functions.invoke("check-key-health", { body: { key_id: key.id } });
     toast.success("Replaced. Re-checking…");
   };
@@ -87,13 +89,26 @@ export default function KeyDetail() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="vault-card p-4 md:col-span-2">
           <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
-            <span>API Key</span>
-            <button onClick={() => setShow((v) => !v)} className="flex items-center gap-1 text-xs hover:text-foreground">
-              {show ? <><EyeOff className="h-3 w-3" />Hide</> : <><Eye className="h-3 w-3" />Show</>}
+            <span>API Key <Badge variant="outline" className="ml-2 text-[9px]">encrypted at rest</Badge></span>
+            <button
+              onClick={async () => {
+                if (show) { setShow(false); return; }
+                if (!revealed) {
+                  setRevealing(true);
+                  const { data, error } = await supabase.functions.invoke("reveal-key", { body: { key_id: key.id } });
+                  setRevealing(false);
+                  if (error || !data?.key) { toast.error("Could not reveal key"); return; }
+                  setRevealed(data.key as string);
+                }
+                setShow(true);
+              }}
+              className="flex items-center gap-1 text-xs hover:text-foreground"
+            >
+              {show ? <><EyeOff className="h-3 w-3" />Hide</> : <><Eye className="h-3 w-3" />{revealing ? "Decrypting…" : "Show"}</>}
             </button>
           </div>
           <div className="mono break-all rounded-md bg-secondary/60 p-3 text-sm">
-            {show ? key.api_key : "•".repeat(Math.min(64, key.api_key.length))}
+            {show && revealed ? revealed : "•".repeat(64)}
           </div>
           {key.notes && <div className="mt-3 text-sm text-muted-foreground"><span className="text-foreground">Notes:</span> {key.notes}</div>}
           <div className="mt-3 text-xs text-muted-foreground">Last checked {timeAgo(key.last_checked)}</div>
