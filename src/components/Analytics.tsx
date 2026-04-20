@@ -10,7 +10,10 @@ import {
 } from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
 
-type Snapshot = Tables<"key_credit_snapshots">;
+type Snapshot = {
+  id: string; key_id: string; owner_github: string; provider: string;
+  snapshot_date: string; credits_remaining: number | null; credits_limit: number | null; created_at: string;
+};
 type ApiKey = Tables<"api_keys">;
 
 const PROVIDER_COLORS: Record<string, string> = {
@@ -46,7 +49,7 @@ export default function Analytics() {
       const since = new Date();
       since.setDate(since.getDate() - 7);
       const [{ data: snaps }, { data: ks }] = await Promise.all([
-        supabase.from("key_credit_snapshots").select("*")
+        (supabase.from as any)("key_credit_snapshots").select("*")
           .eq("owner_github", github.username)
           .gte("snapshot_date", since.toISOString().slice(0, 10))
           .order("snapshot_date", { ascending: true }),
