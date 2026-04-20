@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { maskKey, statusBg, statusColor, timeAgo } from "@/lib/format";
 import type { Tables } from "@/integrations/supabase/types";
+import Analytics from "@/components/Analytics";
 
 type ApiKey = Tables<"api_keys">;
 
@@ -85,6 +86,9 @@ export default function Dashboard() {
         <StatCard icon={<AlertTriangle className="h-4 w-4" />} label="Errors" value={stats.error} accent="text-destructive" />
         <StatCard icon={<HelpCircle className="h-4 w-4" />} label="Unknown" value={stats.unknown} accent="text-muted-foreground" />
       </section>
+
+      {/* Analytics */}
+      <Analytics />
 
       {/* Filters */}
       <section className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
