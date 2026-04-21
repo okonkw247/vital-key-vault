@@ -14,6 +14,7 @@ import KeyDetail from "./pages/KeyDetail";
 import Repos from "./pages/Repos";
 import Integration from "./pages/Integration";
 import Settings from "./pages/Settings";
+import Digest from "./pages/Digest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
