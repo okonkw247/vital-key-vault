@@ -67,6 +67,7 @@ export default function Layout() {
             <NavLink to="/" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Dashboard</NavLink>
             <NavLink to="/repos" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Repos</NavLink>
             <NavLink to="/integration" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Integration</NavLink>
+            <NavLink to="/digest" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Digest</NavLink>
             <NavLink to="/settings" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Settings</NavLink>
           </nav>
 
@@ -129,6 +130,7 @@ export default function Layout() {
           <NavLink to="/" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Dashboard</NavLink>
           <NavLink to="/repos" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Repos</NavLink>
           <NavLink to="/integration" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Integration</NavLink>
+          <NavLink to="/digest" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Digest</NavLink>
           <NavLink to="/settings" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Settings</NavLink>
         </nav>
       </header>
