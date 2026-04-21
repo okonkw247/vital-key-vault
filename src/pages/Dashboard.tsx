@@ -170,7 +170,7 @@ function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label
   );
 }
 
-function KeyGrid({ items }: { items: ApiKey[] }) {
+function KeyGrid({ items, snapshots }: { items: ApiKey[]; snapshots: Snapshot[] }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
 
@@ -211,7 +211,7 @@ function KeyGrid({ items }: { items: ApiKey[] }) {
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               }}
             >
-              {rowItems.map((k) => <KeyCard key={k.id} k={k} />)}
+              {rowItems.map((k) => <KeyCard key={k.id} k={k} snapshots={snapshots} />)}
             </div>
           );
         })}
@@ -220,11 +220,13 @@ function KeyGrid({ items }: { items: ApiKey[] }) {
   );
 }
 
-function KeyCard({ k }: { k: ApiKey }) {
+function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
   const used = k.credits_limit && k.credits_remaining != null ? Math.max(0, Math.min(100, ((Number(k.credits_limit) - Number(k.credits_remaining)) / Number(k.credits_limit)) * 100)) : null;
+  const isOpenRouter = k.provider.toLowerCase() === "openrouter";
+  const daysLeft = isOpenRouter ? forecastDays(snapshots, k.id, k.credits_remaining == null ? null : Number(k.credits_remaining)) : null;
 
   const onCheck = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -264,16 +266,27 @@ function KeyCard({ k }: { k: ApiKey }) {
         </div>
       </div>
 
-      {k.provider.toLowerCase() === "openrouter" && k.credits_limit != null && (
+      {isOpenRouter && k.credits_limit != null && (
         <div className="my-2">
           <Progress value={used ?? 0} className="h-1.5" />
           <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
             <span>{k.credits_remaining != null ? Number(k.credits_remaining).toFixed(4) : "—"} left</span>
             <span>limit {Number(k.credits_limit).toFixed(2)}</span>
           </div>
+          {daysLeft != null && (
+            <div className="mt-1.5 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${daysLeft <= 3 ? "border-destructive/60 text-destructive" : daysLeft <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
+              >
+                ~{daysLeft}d until empty
+              </Badge>
+            </div>
+          )}
         </div>
       )}
-      {k.provider.toLowerCase() === "openrouter" && k.is_free_tier && (
+      {isOpenRouter && k.is_free_tier && (
         <Badge variant="outline" className="my-2 text-[10px]">Free tier</Badge>
       )}
 
