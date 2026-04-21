@@ -268,6 +268,8 @@ export type Database = {
           nonce: string
         }[]
       }
+      generate_daily_digests: { Args: never; Returns: number }
+      rotate_my_keys: { Args: never; Returns: number }
       vault_get_key: { Args: never; Returns: string }
     }
     Enums: {
