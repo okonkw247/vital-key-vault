@@ -36,6 +36,7 @@ const App = () => (
               <Route path="/repos" element={<Repos />} />
               <Route path="/integration" element={<Integration />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/digest" element={<Digest />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
