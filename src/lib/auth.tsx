@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 
 type GhProfile = {
   username: string;
@@ -15,6 +16,7 @@ type AuthCtx = {
   loading: boolean;
   github: GhProfile | null;
   signInWithGithub: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -38,8 +40,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up listener BEFORE getSession to avoid race on refresh
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s);
+      setLoading(false);
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
@@ -60,6 +64,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           redirectTo: `${window.location.origin}/`,
           scopes: "repo read:user user:email",
         },
+      });
+    },
+    signInWithGoogle: async () => {
+      await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/`,
       });
     },
     signOut: async () => {
