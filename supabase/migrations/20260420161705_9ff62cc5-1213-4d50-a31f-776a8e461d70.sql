@@ -22,7 +22,7 @@ $$;
 -- =========================
 -- api_keys
 -- =========================
-create table public.api_keys (
+create table if not exists public.api_keys (
   id uuid primary key default gen_random_uuid(),
   owner_github text not null,
   key_name text not null,
@@ -37,9 +37,9 @@ create table public.api_keys (
   notes text,
   created_at timestamptz not null default now()
 );
-create index idx_api_keys_owner on public.api_keys(owner_github);
-create index idx_api_keys_owner_provider on public.api_keys(owner_github, provider, status);
-create unique index uniq_api_keys_owner_value on public.api_keys(owner_github, api_key);
+create index if not exists idx_api_keys_owner on public.api_keys(owner_github);
+create index if not exists idx_api_keys_owner_provider on public.api_keys(owner_github, provider, status);
+create unique index if not exists uniq_api_keys_owner_value on public.api_keys(owner_github, api_key);
 
 alter table public.api_keys enable row level security;
 create policy "select own api_keys" on public.api_keys for select
@@ -59,7 +59,7 @@ alter table public.api_keys replica identity full;
 -- =========================
 -- key_events
 -- =========================
-create table public.key_events (
+create table if not exists public.key_events (
   id uuid primary key default gen_random_uuid(),
   key_id uuid not null references public.api_keys(id) on delete cascade,
   owner_github text not null,
@@ -67,8 +67,21 @@ create table public.key_events (
   message text,
   created_at timestamptz not null default now()
 );
-create index idx_key_events_owner_created on public.key_events(owner_github, created_at desc);
-create index idx_key_events_key on public.key_events(key_id, created_at desc);
+
+-- Ensure owner_github column exists if table was created without it
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_schema = 'public' and table_name = 'key_events' and column_name = 'owner_github'
+  ) then
+    alter table public.key_events add column owner_github text not null default '';
+  end if;
+end;
+$$;
+
+create index if not exists idx_key_events_owner_created on public.key_events(owner_github, created_at desc);
+create index if not exists idx_key_events_key on public.key_events(key_id, created_at desc);
 
 alter table public.key_events enable row level security;
 create policy "select own key_events" on public.key_events for select
@@ -82,7 +95,7 @@ alter table public.key_events replica identity full;
 -- =========================
 -- repo_key_links
 -- =========================
-create table public.repo_key_links (
+create table if not exists public.repo_key_links (
   id uuid primary key default gen_random_uuid(),
   owner_github text not null,
   repo_name text not null,
@@ -103,7 +116,7 @@ create policy "delete own repo_key_links" on public.repo_key_links for delete
 -- =========================
 -- user_tokens
 -- =========================
-create table public.user_tokens (
+create table if not exists public.user_tokens (
   id uuid primary key default gen_random_uuid(),
   owner_github text not null unique,
   access_token text not null unique default replace(gen_random_uuid()::text, '-', ''),
@@ -123,7 +136,7 @@ create policy "update own user_tokens" on public.user_tokens for update
 -- =========================
 -- notifications
 -- =========================
-create table public.notifications (
+create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   owner_github text not null,
   key_id uuid references public.api_keys(id) on delete cascade,
@@ -133,7 +146,7 @@ create table public.notifications (
   read boolean not null default false,
   created_at timestamptz not null default now()
 );
-create index idx_notifications_owner_created on public.notifications(owner_github, created_at desc);
+create index if not exists idx_notifications_owner_created on public.notifications(owner_github, created_at desc);
 alter table public.notifications enable row level security;
 create policy "select own notifications" on public.notifications for select
   using (owner_github = public.current_github_username());
@@ -179,17 +192,23 @@ create trigger on_auth_user_created
 -- =========================
 -- Schedule health check every 30 minutes
 -- =========================
-select cron.schedule(
-  'check-key-health-every-30min',
-  '*/30 * * * *',
-  $cron$
-  select net.http_post(
-    url := 'https://hoojdsricmaqlssfsmjy.supabase.co/functions/v1/check-key-health',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvb2pkc3JpY21hcWxzc2ZzbWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTQ2NDgsImV4cCI6MjA5MjI3MDY0OH0.swGRfOxmZiJxlLI9Ip_sDLAVZ37qkZS-_RmiaKRz80c'
-    ),
-    body := jsonb_build_object('source', 'cron')
-  ) as request_id;
-  $cron$
-);
+do $$
+begin
+  perform cron.schedule(
+    'check-key-health-every-30min',
+    '*/30 * * * *',
+    $cron$
+    select net.http_post(
+      url := 'https://hoojdsricmaqlssfsmjy.supabase.co/functions/v1/check-key-health',
+      headers := jsonb_build_object(
+        'Content-Type', 'application/json',
+        'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhvb2pkc3JpY21hcWxzc2ZzbWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2OTQ2NDgsImV4cCI6MjA5MjI3MDY0OH0.swGRfOxmZiJxlLI9Ip_sDLAVZ37qkZS-_RmiaKRz80c'
+      ),
+      body := jsonb_build_object('source', 'cron')
+    ) as request_id;
+    $cron$
+  );
+exception when unique_violation then
+  null; -- job already scheduled
+end;
+$$;
