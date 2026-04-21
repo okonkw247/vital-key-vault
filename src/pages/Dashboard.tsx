@@ -15,6 +15,27 @@ import type { Tables } from "@/integrations/supabase/types";
 import Analytics from "@/components/Analytics";
 
 type ApiKey = Tables<"api_keys">;
+type Snapshot = { key_id: string; snapshot_date: string; credits_remaining: number | null };
+
+// Compute days-until-zero from last 7 daily snapshots
+function forecastDays(snaps: Snapshot[], keyId: string, remaining: number | null): number | null {
+  if (remaining == null || remaining <= 0) return null;
+  const series = snaps
+    .filter((s) => s.key_id === keyId && s.credits_remaining != null)
+    .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+  if (series.length < 2) return null;
+  let totalBurn = 0, days = 0;
+  for (let i = 1; i < series.length; i++) {
+    const p = Number(series[i - 1].credits_remaining);
+    const c = Number(series[i].credits_remaining);
+    if (p > c) { totalBurn += p - c; days += 1; }
+    else if (c >= p) { days += 1; }
+  }
+  if (days === 0 || totalBurn === 0) return null;
+  const avgPerDay = totalBurn / days;
+  if (avgPerDay <= 0) return null;
+  return Math.max(0, Math.ceil(remaining / avgPerDay));
+}
 
 const CATEGORIES = ["All", "AI", "Storage", "Payment", "Custom"] as const;
 
@@ -22,6 +43,7 @@ export default function Dashboard() {
   const { github } = useAuth();
   const navigate = useNavigate();
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<typeof CATEGORIES[number]>("All");
@@ -29,12 +51,21 @@ export default function Dashboard() {
   const load = async () => {
     if (!github) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("api_keys")
-      .select("*")
-      .eq("owner_github", github.username)
-      .order("created_at", { ascending: false });
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+    const [{ data }, { data: snaps }] = await Promise.all([
+      supabase
+        .from("api_keys")
+        .select("*")
+        .eq("owner_github", github.username)
+        .order("created_at", { ascending: false }),
+      (supabase.from as any)("key_credit_snapshots")
+        .select("key_id, snapshot_date, credits_remaining")
+        .eq("owner_github", github.username)
+        .gte("snapshot_date", since.toISOString().slice(0, 10)),
+    ]);
     setKeys(data ?? []);
+    setSnapshots((snaps as Snapshot[]) ?? []);
     setLoading(false);
   };
 
@@ -115,7 +146,7 @@ export default function Dashboard() {
           <Button onClick={() => navigate("/add")}><Plus className="mr-2 h-4 w-4" />Add Key</Button>
         </div>
       ) : (
-        <KeyGrid items={filtered} />
+        <KeyGrid items={filtered} snapshots={snapshots} />
       )}
 
       {/* Floating add */}
@@ -139,7 +170,7 @@ function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label
   );
 }
 
-function KeyGrid({ items }: { items: ApiKey[] }) {
+function KeyGrid({ items, snapshots }: { items: ApiKey[]; snapshots: Snapshot[] }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
 
@@ -180,7 +211,7 @@ function KeyGrid({ items }: { items: ApiKey[] }) {
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               }}
             >
-              {rowItems.map((k) => <KeyCard key={k.id} k={k} />)}
+              {rowItems.map((k) => <KeyCard key={k.id} k={k} snapshots={snapshots} />)}
             </div>
           );
         })}
@@ -189,11 +220,13 @@ function KeyGrid({ items }: { items: ApiKey[] }) {
   );
 }
 
-function KeyCard({ k }: { k: ApiKey }) {
+function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
   const used = k.credits_limit && k.credits_remaining != null ? Math.max(0, Math.min(100, ((Number(k.credits_limit) - Number(k.credits_remaining)) / Number(k.credits_limit)) * 100)) : null;
+  const isOpenRouter = k.provider.toLowerCase() === "openrouter";
+  const daysLeft = isOpenRouter ? forecastDays(snapshots, k.id, k.credits_remaining == null ? null : Number(k.credits_remaining)) : null;
 
   const onCheck = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -233,16 +266,27 @@ function KeyCard({ k }: { k: ApiKey }) {
         </div>
       </div>
 
-      {k.provider.toLowerCase() === "openrouter" && k.credits_limit != null && (
+      {isOpenRouter && k.credits_limit != null && (
         <div className="my-2">
           <Progress value={used ?? 0} className="h-1.5" />
           <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
             <span>{k.credits_remaining != null ? Number(k.credits_remaining).toFixed(4) : "—"} left</span>
             <span>limit {Number(k.credits_limit).toFixed(2)}</span>
           </div>
+          {daysLeft != null && (
+            <div className="mt-1.5 flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
+              <Badge
+                variant="outline"
+                className={`text-[10px] ${daysLeft <= 3 ? "border-destructive/60 text-destructive" : daysLeft <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
+              >
+                ~{daysLeft}d until empty
+              </Badge>
+            </div>
+          )}
         </div>
       )}
-      {k.provider.toLowerCase() === "openrouter" && k.is_free_tier && (
+      {isOpenRouter && k.is_free_tier && (
         <Badge variant="outline" className="my-2 text-[10px]">Free tier</Badge>
       )}
 

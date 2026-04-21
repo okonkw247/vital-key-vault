@@ -44,6 +44,16 @@ export default function Settings() {
     if (error) toast.error(error.message); else toast.success("All keys deleted");
   };
 
+  const [rotating, setRotating] = useState(false);
+  const rotateKeys = async () => {
+    if (!confirm("Re-encrypt all your API keys with fresh nonces? This is safe and reversible.")) return;
+    setRotating(true);
+    const { data, error } = await (supabase.rpc as any)("rotate_my_keys");
+    setRotating(false);
+    if (error) toast.error(error.message);
+    else toast.success(`Re-encrypted ${data ?? 0} keys`);
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
@@ -91,6 +101,17 @@ export default function Settings() {
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
         </div>
+      </section>
+
+      <section className="vault-card p-5 space-y-3">
+        <h2 className="font-medium">Encryption</h2>
+        <p className="text-xs text-muted-foreground">
+          Re-encrypts every one of your API keys with a fresh nonce derived from the pgsodium master key.
+          Use this after any suspected exposure of an old DB dump.
+        </p>
+        <Button variant="outline" onClick={rotateKeys} disabled={rotating}>
+          {rotating ? "Rotating…" : "Rotate encryption key"}
+        </Button>
       </section>
 
       <section className="vault-card border-destructive/40 p-5 space-y-3">
