@@ -14,6 +14,7 @@ import KeyDetail from "./pages/KeyDetail";
 import Repos from "./pages/Repos";
 import Integration from "./pages/Integration";
 import Settings from "./pages/Settings";
+import Digest from "./pages/Digest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/repos" element={<Repos />} />
               <Route path="/integration" element={<Integration />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/digest" element={<Digest />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

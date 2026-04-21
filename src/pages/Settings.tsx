@@ -46,12 +46,35 @@ export default function Settings() {
 
   const [rotating, setRotating] = useState(false);
   const rotateKeys = async () => {
+    if (!github) return;
     if (!confirm("Re-encrypt all your API keys with fresh nonces? This is safe and reversible.")) return;
     setRotating(true);
+    const startedAt = new Date();
     const { data, error } = await (supabase.rpc as any)("rotate_my_keys");
     setRotating(false);
-    if (error) toast.error(error.message);
-    else toast.success(`Re-encrypted ${data ?? 0} keys`);
+    if (error) { toast.error(error.message); return; }
+
+    const count = Number(data ?? 0);
+    const { data: rows } = await supabase
+      .from("api_keys")
+      .select("key_name")
+      .eq("owner_github", github.username)
+      .order("key_name", { ascending: true });
+    const names = (rows ?? []).map((r) => r.key_name);
+    const summary = names.length > 4
+      ? `${names.slice(0, 4).join(", ")} +${names.length - 4} more`
+      : names.join(", ") || "—";
+
+    await supabase.from("notifications").insert({
+      owner_github: github.username,
+      title: "Encryption rotated",
+      body: `Re-encrypted ${count} key${count === 1 ? "" : "s"} at ${startedAt.toLocaleTimeString()} — ${summary}`,
+    });
+
+    toast.success(`Rotated ${count} key${count === 1 ? "" : "s"}`, {
+      description: names.length ? `Re-encrypted: ${summary}` : "No keys needed rotation",
+      duration: 6000,
+    });
   };
 
   return (

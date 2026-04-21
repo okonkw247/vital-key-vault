@@ -17,24 +17,53 @@ import Analytics from "@/components/Analytics";
 type ApiKey = Tables<"api_keys">;
 type Snapshot = { key_id: string; snapshot_date: string; credits_remaining: number | null };
 
-// Compute days-until-zero from last 7 daily snapshots
-function forecastDays(snaps: Snapshot[], keyId: string, remaining: number | null): number | null {
+// Linear regression forecast: fit credits_remaining ~ a + b*day_index over last 7 snapshots.
+// Returns point estimate + ±1σ confidence band (in days) for credits→0.
+type Forecast = { days: number; low: number; high: number; r2: number };
+function forecastDays(snaps: Snapshot[], keyId: string, remaining: number | null): Forecast | null {
   if (remaining == null || remaining <= 0) return null;
   const series = snaps
     .filter((s) => s.key_id === keyId && s.credits_remaining != null)
-    .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+    .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date))
+    .slice(-7);
   if (series.length < 2) return null;
-  let totalBurn = 0, days = 0;
-  for (let i = 1; i < series.length; i++) {
-    const p = Number(series[i - 1].credits_remaining);
-    const c = Number(series[i].credits_remaining);
-    if (p > c) { totalBurn += p - c; days += 1; }
-    else if (c >= p) { days += 1; }
+
+  const n = series.length;
+  const xs = series.map((_, i) => i);
+  const ys = series.map((s) => Number(s.credits_remaining));
+  const meanX = xs.reduce((a, b) => a + b, 0) / n;
+  const meanY = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, denX = 0, denY = 0;
+  for (let i = 0; i < n; i++) {
+    num += (xs[i] - meanX) * (ys[i] - meanY);
+    denX += (xs[i] - meanX) ** 2;
+    denY += (ys[i] - meanY) ** 2;
   }
-  if (days === 0 || totalBurn === 0) return null;
-  const avgPerDay = totalBurn / days;
-  if (avgPerDay <= 0) return null;
-  return Math.max(0, Math.ceil(remaining / avgPerDay));
+  if (denX === 0) return null;
+  const slope = num / denX; // credits per day; expect negative when burning
+  if (slope >= 0) return null; // not depleting
+  const burn = -slope;
+
+  // residual std error → propagate to days uncertainty
+  const intercept = meanY - slope * meanX;
+  let ssRes = 0;
+  for (let i = 0; i < n; i++) {
+    const pred = intercept + slope * xs[i];
+    ssRes += (ys[i] - pred) ** 2;
+  }
+  const r2 = denY === 0 ? 1 : Math.max(0, 1 - ssRes / denY);
+  const stdErr = Math.sqrt(ssRes / Math.max(1, n - 2));
+  const days = remaining / burn;
+  const burnLow = Math.max(burn * 0.5, burn - stdErr);
+  const burnHigh = burn + stdErr;
+  const high = remaining / burnLow; // slower burn → more days
+  const low = remaining / burnHigh; // faster burn → fewer days
+  return {
+    days: Math.max(0, Math.ceil(days)),
+    low: Math.max(0, Math.floor(low)),
+    high: Math.max(0, Math.ceil(high)),
+    r2,
+  };
 }
 
 const CATEGORIES = ["All", "AI", "Storage", "Payment", "Custom"] as const;
@@ -274,14 +303,20 @@ function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
             <span>limit {Number(k.credits_limit).toFixed(2)}</span>
           </div>
           {daysLeft != null && (
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
-              <Badge
-                variant="outline"
-                className={`text-[10px] ${daysLeft <= 3 ? "border-destructive/60 text-destructive" : daysLeft <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
-              >
-                ~{daysLeft}d until empty
-              </Badge>
+            <div className="mt-1.5 space-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] ${daysLeft.days <= 3 ? "border-destructive/60 text-destructive" : daysLeft.days <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
+                >
+                  ~{daysLeft.days}d until empty
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>range {daysLeft.low}–{daysLeft.high}d</span>
+                <span>R²&nbsp;{daysLeft.r2.toFixed(2)}</span>
+              </div>
             </div>
           )}
         </div>
