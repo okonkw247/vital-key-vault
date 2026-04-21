@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
+import AuthErrorBoundary from "@/components/AuthErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
 import Login from "./pages/Login";
@@ -25,22 +26,24 @@ const App = () => (
       <Toaster />
       <Sonner theme="dark" />
       <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/add" element={<AddKey />} />
-              <Route path="/import" element={<ImportKeys />} />
-              <Route path="/key/:id" element={<KeyDetail />} />
-              <Route path="/repos" element={<Repos />} />
-              <Route path="/integration" element={<Integration />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/digest" element={<Digest />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
+        <AuthErrorBoundary>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/add" element={<AddKey />} />
+                <Route path="/import" element={<ImportKeys />} />
+                <Route path="/key/:id" element={<KeyDetail />} />
+                <Route path="/repos" element={<Repos />} />
+                <Route path="/integration" element={<Integration />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/digest" element={<Digest />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </AuthErrorBoundary>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
