@@ -15,6 +15,27 @@ import type { Tables } from "@/integrations/supabase/types";
 import Analytics from "@/components/Analytics";
 
 type ApiKey = Tables<"api_keys">;
+type Snapshot = { key_id: string; snapshot_date: string; credits_remaining: number | null };
+
+// Compute days-until-zero from last 7 daily snapshots
+function forecastDays(snaps: Snapshot[], keyId: string, remaining: number | null): number | null {
+  if (remaining == null || remaining <= 0) return null;
+  const series = snaps
+    .filter((s) => s.key_id === keyId && s.credits_remaining != null)
+    .sort((a, b) => a.snapshot_date.localeCompare(b.snapshot_date));
+  if (series.length < 2) return null;
+  let totalBurn = 0, days = 0;
+  for (let i = 1; i < series.length; i++) {
+    const p = Number(series[i - 1].credits_remaining);
+    const c = Number(series[i].credits_remaining);
+    if (p > c) { totalBurn += p - c; days += 1; }
+    else if (c >= p) { days += 1; }
+  }
+  if (days === 0 || totalBurn === 0) return null;
+  const avgPerDay = totalBurn / days;
+  if (avgPerDay <= 0) return null;
+  return Math.max(0, Math.ceil(remaining / avgPerDay));
+}
 
 const CATEGORIES = ["All", "AI", "Storage", "Payment", "Custom"] as const;
 
@@ -22,6 +43,7 @@ export default function Dashboard() {
   const { github } = useAuth();
   const navigate = useNavigate();
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<typeof CATEGORIES[number]>("All");
@@ -29,12 +51,21 @@ export default function Dashboard() {
   const load = async () => {
     if (!github) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("api_keys")
-      .select("*")
-      .eq("owner_github", github.username)
-      .order("created_at", { ascending: false });
+    const since = new Date();
+    since.setDate(since.getDate() - 7);
+    const [{ data }, { data: snaps }] = await Promise.all([
+      supabase
+        .from("api_keys")
+        .select("*")
+        .eq("owner_github", github.username)
+        .order("created_at", { ascending: false }),
+      (supabase.from as any)("key_credit_snapshots")
+        .select("key_id, snapshot_date, credits_remaining")
+        .eq("owner_github", github.username)
+        .gte("snapshot_date", since.toISOString().slice(0, 10)),
+    ]);
     setKeys(data ?? []);
+    setSnapshots((snaps as Snapshot[]) ?? []);
     setLoading(false);
   };
 
