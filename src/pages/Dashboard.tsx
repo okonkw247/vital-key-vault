@@ -303,14 +303,20 @@ function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
             <span>limit {Number(k.credits_limit).toFixed(2)}</span>
           </div>
           {daysLeft != null && (
-            <div className="mt-1.5 flex items-center justify-between">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
-              <Badge
-                variant="outline"
-                className={`text-[10px] ${daysLeft <= 3 ? "border-destructive/60 text-destructive" : daysLeft <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
-              >
-                ~{daysLeft}d until empty
-              </Badge>
+            <div className="mt-1.5 space-y-0.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Forecast</span>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] ${daysLeft.days <= 3 ? "border-destructive/60 text-destructive" : daysLeft.days <= 7 ? "border-warning/60 text-warning" : "text-muted-foreground"}`}
+                >
+                  ~{daysLeft.days}d until empty
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>range {daysLeft.low}–{daysLeft.high}d</span>
+                <span>R²&nbsp;{daysLeft.r2.toFixed(2)}</span>
+              </div>
             </div>
           )}
         </div>
