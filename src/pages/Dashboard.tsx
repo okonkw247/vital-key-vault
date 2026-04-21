@@ -146,7 +146,7 @@ export default function Dashboard() {
           <Button onClick={() => navigate("/add")}><Plus className="mr-2 h-4 w-4" />Add Key</Button>
         </div>
       ) : (
-        <KeyGrid items={filtered} />
+        <KeyGrid items={filtered} snapshots={snapshots} />
       )}
 
       {/* Floating add */}
