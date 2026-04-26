@@ -11,7 +11,52 @@ import {
   Upload,
   Bell,
   Github,
+  Database,
+  Server,
+  ShieldCheck,
+  Quote,
 } from "lucide-react";
+
+const trustCards = [
+  {
+    icon: Github,
+    title: "Fully Open Source",
+    body: "Every line of code is public on GitHub. Read exactly how your keys are stored and handled. No hidden logic, no black boxes.",
+    badge: "View on GitHub →",
+    href: "https://github.com/okonkw247/vital-key-vault",
+  },
+  {
+    icon: Database,
+    title: "Your Own Supabase",
+    body: "Keys are stored in YOUR Supabase instance with Row Level Security. Only you can access your own keys. Not even we can read them.",
+    badge: "Powered by Supabase",
+  },
+  {
+    icon: Server,
+    title: "Self Host Anytime",
+    body: "Don't want to use our hosted version? Clone the repo and run your own instance in minutes. We have nothing to hide.",
+    badge: "Self Hosting Guide →",
+    href: "https://github.com/okonkw247/vital-key-vault#self-hosting",
+  },
+  {
+    icon: ShieldCheck,
+    title: "GitHub Login Only",
+    body: "No email. No password. No credit card to start. Sign in with GitHub and you're in. Low commitment, zero risk.",
+    badge: "Free to start",
+  },
+];
+
+const trustBar = [
+  { label: "Built on Supabase", icon: Database },
+  { label: "Deployed on Vercel", icon: Server },
+  { label: "Open Source on GitHub", icon: Github },
+];
+
+const freeProviders = [
+  { name: "OpenRouter", perk: "Free $5 credit" },
+  { name: "Groq", perk: "Free tier unlimited" },
+  { name: "Gemini", perk: "Free tier available" },
+];
 
 const features = [
   { icon: KeyRound, title: "Unlimited Key Storage", body: "Organize keys by provider and category. Supports 100,000+ keys with instant search." },
