@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { Bell, KeyRound, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Bell, LogOut, Settings as SettingsIcon } from "lucide-react";
+import Logo from "@/components/Logo";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
@@ -56,15 +57,13 @@ export default function Layout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-3 px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/15 text-primary">
-              <KeyRound className="h-4 w-4" />
-            </div>
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <Logo size={28} />
             <span className="font-semibold tracking-tight">Adams X <span className="text-primary">API Vault</span></span>
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">
-            <NavLink to="/" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Dashboard</NavLink>
+            <NavLink to="/dashboard" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Dashboard</NavLink>
             <NavLink to="/repos" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Repos</NavLink>
             <NavLink to="/integration" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Integration</NavLink>
             <NavLink to="/digest" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Digest</NavLink>
@@ -127,7 +126,7 @@ export default function Layout() {
 
         {/* Mobile nav */}
         <nav className="flex items-center gap-1 overflow-x-auto border-t border-border px-2 py-1.5 md:hidden">
-          <NavLink to="/" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Dashboard</NavLink>
+          <NavLink to="/dashboard" end className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Dashboard</NavLink>
           <NavLink to="/repos" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Repos</NavLink>
           <NavLink to="/integration" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Integration</NavLink>
           <NavLink to="/digest" className={({ isActive }) => `${navItem} ${isActive ? "bg-secondary" : "text-muted-foreground"}`}>Digest</NavLink>

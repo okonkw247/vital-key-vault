@@ -12,6 +12,6 @@ export default function ProtectedRoute({ children }: { children: ReactNode }) {
       </div>
     );
   }
-  if (!session) return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
+  if (!session) return <Navigate to="/" replace state={{ from: loc.pathname }} />;
   return <>{children}</>;
 }
