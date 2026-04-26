@@ -27,6 +27,15 @@ const providers = ["OpenRouter", "Groq", "Gemini", "OpenAI", "Custom"];
 export default function Landing() {
   const { session, loading } = useAuth();
   const navigate = useNavigate();
+
+  // If GitHub OAuth redirected back to "/" with the access_token in the hash,
+  // hand it off to the dedicated callback route so Supabase can finish sign-in.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash.includes("access_token=")) {
+      navigate("/auth/callback" + window.location.hash, { replace: true });
+    }
+  }, [navigate]);
+
   useEffect(() => {
     if (!loading && session) navigate("/dashboard", { replace: true });
   }, [session, loading, navigate]);
