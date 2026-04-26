@@ -37,6 +37,7 @@ export default function KeyDetail() {
     const { data: ev } = await supabase.from("key_events").select("*").eq("key_id", id).order("created_at", { ascending: false }).limit(100);
     setEvents((ev as Event[]) ?? []);
   };
+
   useEffect(() => {
     load();
     if (!id || !github) return;
@@ -54,7 +55,7 @@ export default function KeyDetail() {
     return Math.max(0, Math.min(100, ((Number(key.credits_limit) - Number(key.credits_remaining)) / Number(key.credits_limit)) * 100));
   }, [key]);
 
-  if (!key) return <div className="text-muted-foreground">Loading…</div>;
+  if (!key) return <div className="text-muted-foreground">Loading...</div>;
 
   const onCheck = async () => {
     setBusy(true);
@@ -65,13 +66,19 @@ export default function KeyDetail() {
 
   const onReplace = async () => {
     if (!newKey.trim()) return;
-    if (key.provider === "OpenRouter" && !newKey.startsWith("sk-or-")) { toast.error("OpenRouter keys must start with sk-or-"); return; }
-    const { error } = await supabase.from("api_keys").update({ api_key: newKey.trim(), status: "unknown", credits_remaining: null, last_checked: null }).eq("id", key.id);
+    if (key.provider === "OpenRouter" && !newKey.startsWith("sk-or-")) {
+      toast.error("OpenRouter keys must start with sk-or-"); return;
+    }
+    const { error } = await supabase.from("api_keys").update({
+      api_key: newKey.trim(), status: "unknown", credits_remaining: null, last_checked: null
+    }).eq("id", key.id);
     if (error) { toast.error(error.message); return; }
-    await supabase.from("key_events").insert({ key_id: key.id, owner_github: key.owner_github, event_type: "replaced", message: "Key value replaced" });
+    await supabase.from("key_events").insert({
+      key_id: key.id, event_type: "replaced", message: "Key value replaced"
+    });
     setReplaceOpen(false); setNewKey(""); setRevealed(null); setShow(false);
     supabase.functions.invoke("check-key-health", { body: { key_id: key.id } });
-    toast.success("Replaced. Re-checking…");
+    toast.success("Replaced. Re-checking...");
   };
 
   return (
@@ -89,22 +96,26 @@ export default function KeyDetail() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="vault-card p-4 md:col-span-2">
           <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
-            <span>API Key <Badge variant="outline" className="ml-2 text-[9px]">encrypted at rest</Badge></span>
+            <span>API Key</span>
             <button
               onClick={async () => {
                 if (show) { setShow(false); return; }
                 if (!revealed) {
                   setRevealing(true);
-                  const { data, error } = await supabase.functions.invoke("reveal-key", { body: { key_id: key.id } });
+                  const { data, error } = await supabase
+                    .from("api_keys")
+                    .select("api_key")
+                    .eq("id", key.id)
+                    .single();
                   setRevealing(false);
-                  if (error || !data?.key) { toast.error("Could not reveal key"); return; }
-                  setRevealed(data.key as string);
+                  if (error || !data?.api_key) { toast.error("Could not reveal key"); return; }
+                  setRevealed(data.api_key as string);
                 }
                 setShow(true);
               }}
               className="flex items-center gap-1 text-xs hover:text-foreground"
             >
-              {show ? <><EyeOff className="h-3 w-3" />Hide</> : <><Eye className="h-3 w-3" />{revealing ? "Decrypting…" : "Show"}</>}
+              {show ? <><EyeOff className="h-3 w-3" />Hide</> : <><Eye className="h-3 w-3" />{revealing ? "Decrypting..." : "Show"}</>}
             </button>
           </div>
           <div className="mono break-all rounded-md bg-secondary/60 p-3 text-sm">
@@ -181,4 +192,3 @@ function CircularGauge({ percent, label }: { percent: number; label: string }) {
     </div>
   );
 }
-
