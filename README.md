@@ -342,6 +342,32 @@ vital-key-vault/
 
 ---
 
+## Security
+
+### How Your Keys Are Stored
+
+- All keys stored in your own Supabase project
+- Row Level Security (RLS) enabled on all tables
+- Only you can read your own keys
+- No keys are ever logged, shared, or readable by anyone else
+- GitHub OAuth only — no passwords stored anywhere
+
+### Self Hosting
+
+Don't want to use the hosted version? Clone the repo and deploy your own instance:
+
+1. Fork the repo
+2. Create your own Supabase project
+3. Run the SQL schema
+4. Deploy to Vercel
+5. Add your own environment variables
+
+### Reporting Security Issues
+
+Found a vulnerability? Open a GitHub issue or email the maintainer directly. Security issues are treated as highest priority.
+
+---
+
 ## Roadmap
 
 - [ ] Mobile app (React Native)
