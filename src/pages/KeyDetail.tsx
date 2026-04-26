@@ -181,3 +181,4 @@ function CircularGauge({ percent, label }: { percent: number; label: string }) {
     </div>
   );
 }
+
