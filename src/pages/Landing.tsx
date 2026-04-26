@@ -193,8 +193,102 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Trust & Security */}
+      <section className="border-t border-border bg-card/20 py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Your keys. Your Supabase. <span className="text-primary">Your control.</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground md:text-lg">
+              Your keys live in your own Supabase instance. We never see them, never touch them,
+              never store them on our servers. Ever.
+            </p>
+          </div>
+
+          {/* 2x2 Trust cards */}
+          <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
+            {trustCards.map(({ icon: Icon, title, body, badge, href }) => (
+              <div
+                key={title}
+                className="group rounded-2xl border border-border bg-card p-6 transition-all hover:border-primary/50 hover:shadow-[0_0_40px_hsl(var(--primary)/0.15)]"
+              >
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-semibold">{title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground">{body}</p>
+                {href ? (
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-4 inline-flex items-center rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                  >
+                    {badge}
+                  </a>
+                ) : (
+                  <span className="mt-4 inline-flex items-center rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs font-medium text-primary/90">
+                    {badge}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Trust bar */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-x-10 gap-y-4 border-y border-border py-6">
+            {trustBar.map(({ label, icon: Icon }) => (
+              <div
+                key={label}
+                className="group flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary"
+              >
+                <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Perfect for getting started */}
+          <div className="mt-16 text-center">
+            <h3 className="text-2xl font-bold tracking-tight md:text-3xl">
+              Perfect for getting started
+            </h3>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
+              Start with your free tier keys — OpenRouter, Groq, Gemini all have free credits.
+              Add them first, verify the vault works, then add more when you're ready.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              {freeProviders.map(({ name, perk }) => (
+                <div
+                  key={name}
+                  className="flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm"
+                >
+                  <span className="font-semibold">{name}</span>
+                  <span className="text-muted-foreground">— {perk}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Quote block */}
+          <div className="mx-auto mt-16 max-w-3xl">
+            <blockquote className="relative rounded-r-xl border-l-4 border-primary bg-card/60 p-8 text-center">
+              <Quote className="mx-auto mb-4 h-6 w-6 text-primary/70" />
+              <p className="text-lg font-medium leading-relaxed text-foreground md:text-xl">
+                "Even if you only store your free OpenRouter key — you'll see exactly how it works.
+                No risk. No commitment. Just sign in with GitHub and add your first key in 30 seconds."
+              </p>
+              <footer className="mt-4 text-sm text-muted-foreground">
+                — Adams, Builder of Adams X API Vault 🇳🇬
+              </footer>
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
-      <section className="mx-auto max-w-5xl px-6 pb-20">
+      <section className="mx-auto max-w-5xl px-6 py-20">
         <div className="rounded-2xl border border-primary/30 bg-card p-10 text-center shadow-[0_0_60px_hsl(var(--primary)/0.2)]">
           <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
             Ready to never lose an API key again?
