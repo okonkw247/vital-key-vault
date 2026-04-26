@@ -7,7 +7,9 @@ import { AuthProvider } from "@/lib/auth";
 import AuthErrorBoundary from "@/components/AuthErrorBoundary";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Layout from "@/components/Layout";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
 import Dashboard from "./pages/Dashboard";
 import AddKey from "./pages/AddKey";
 import ImportKeys from "./pages/ImportKeys";
@@ -29,9 +31,11 @@ const App = () => (
         <AuthErrorBoundary>
           <AuthProvider>
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/add" element={<AddKey />} />
                 <Route path="/import" element={<ImportKeys />} />
                 <Route path="/key/:id" element={<KeyDetail />} />
