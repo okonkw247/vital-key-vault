@@ -1,6 +1,8 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
+import { useAuth } from "@/lib/auth";
 import {
   KeyRound,
   Activity,
@@ -23,6 +25,12 @@ const features = [
 const providers = ["OpenRouter", "Groq", "Gemini", "OpenAI", "Custom"];
 
 export default function Landing() {
+  const { session, loading } = useAuth();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!loading && session) navigate("/dashboard", { replace: true });
+  }, [session, loading, navigate]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hero */}
