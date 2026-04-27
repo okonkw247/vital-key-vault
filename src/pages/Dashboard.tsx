@@ -309,7 +309,7 @@ function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label
   );
 }
 
-function KeyGrid({ items, snapshots }: { items: ApiKey[]; snapshots: Snapshot[] }) {
+function KeyGrid({ items, snapshots, selected, onToggle }: { items: ApiKey[]; snapshots: Snapshot[]; selected: Set<string>; onToggle: (id: string) => void }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [cols, setCols] = useState(1);
 
@@ -350,7 +350,7 @@ function KeyGrid({ items, snapshots }: { items: ApiKey[]; snapshots: Snapshot[] 
                 gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               }}
             >
-              {rowItems.map((k) => <KeyCard key={k.id} k={k} snapshots={snapshots} />)}
+              {rowItems.map((k) => <KeyCard key={k.id} k={k} snapshots={snapshots} selected={selected.has(k.id)} onToggle={() => onToggle(k.id)} />)}
             </div>
           );
         })}
@@ -359,7 +359,7 @@ function KeyGrid({ items, snapshots }: { items: ApiKey[]; snapshots: Snapshot[] 
   );
 }
 
-function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
+function KeyCard({ k, snapshots, selected, onToggle }: { k: ApiKey; snapshots: Snapshot[]; selected: boolean; onToggle: () => void }) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 
@@ -390,8 +390,17 @@ function KeyCard({ k, snapshots }: { k: ApiKey; snapshots: Snapshot[] }) {
   };
 
   return (
-    <div onClick={() => navigate(`/key/${k.id}`)} className="vault-card vault-card-hover cursor-pointer p-4">
-      <div className="mb-2 flex items-start justify-between gap-2">
+    <div
+      onClick={() => navigate(`/key/${k.id}`)}
+      className={`vault-card vault-card-hover relative cursor-pointer p-4 ${selected ? "ring-1 ring-primary" : ""}`}
+    >
+      <div
+        className="absolute left-2 top-2 z-10"
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+      >
+        <Checkbox checked={selected} onCheckedChange={() => onToggle()} aria-label="Select key" />
+      </div>
+      <div className="mb-2 flex items-start justify-between gap-2 pl-7">
         <div className="min-w-0">
           <div className="truncate font-semibold">{k.key_name}</div>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
