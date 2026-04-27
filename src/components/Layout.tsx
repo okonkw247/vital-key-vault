@@ -52,6 +52,14 @@ export default function Layout() {
     await supabase.from("notifications").update({ read: true }).eq("owner_github", github.username).eq("read", false);
   };
 
+  const markOneRead = async (id: string) => {
+    if (!github) return;
+    // Optimistic
+    setNotifs((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setUnread((u) => Math.max(0, u - 1));
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+  };
+
   const navItem = "px-3 py-1.5 rounded-md text-sm transition-colors";
   return (
     <div className="min-h-screen bg-background">
@@ -91,10 +99,25 @@ export default function Layout() {
                 <div className="max-h-80 overflow-auto">
                   {notifs.length === 0 && <div className="px-3 py-6 text-center text-sm text-muted-foreground">No notifications yet</div>}
                   {notifs.map((n) => (
-                    <div key={n.id} className={`border-b border-border/60 px-3 py-2 text-sm last:border-0 ${!n.read ? "bg-secondary/40" : ""}`}>
-                      <div className="font-medium">{n.title}</div>
-                      {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
-                      <div className="mt-0.5 text-[10px] text-muted-foreground">{timeAgo(n.created_at)}</div>
+                    <div
+                      key={n.id}
+                      className={`group flex items-start gap-2 border-b border-border/60 px-3 py-2 text-sm last:border-0 ${!n.read ? "bg-secondary/40" : ""}`}
+                    >
+                      {!n.read && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden />}
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{n.title}</div>
+                        {n.body && <div className="text-xs text-muted-foreground">{n.body}</div>}
+                        <div className="mt-0.5 text-[10px] text-muted-foreground">{timeAgo(n.created_at)}</div>
+                      </div>
+                      {!n.read && (
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); markOneRead(n.id); }}
+                          className="shrink-0 self-center text-[10px] text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100"
+                          title="Mark as read"
+                        >
+                          Mark read
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
