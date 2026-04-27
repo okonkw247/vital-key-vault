@@ -148,6 +148,61 @@ export default function Dashboard() {
     });
   }, [keys, search, category]);
 
+  // Drop selections that no longer exist in filtered/keys
+  useEffect(() => {
+    setSelected((prev) => {
+      const valid = new Set(keys.map((k) => k.id));
+      let changed = false;
+      const next = new Set<string>();
+      prev.forEach((id) => { if (valid.has(id)) next.add(id); else changed = true; });
+      return changed ? next : prev;
+    });
+  }, [keys]);
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((k) => selected.has(k.id));
+  const toggleSelectAllFiltered = () => {
+    if (allFilteredSelected) {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((k) => next.delete(k.id));
+        return next;
+      });
+    } else {
+      setSelected((prev) => {
+        const next = new Set(prev);
+        filtered.forEach((k) => next.add(k.id));
+        return next;
+      });
+    }
+  };
+
+  const bulkCheck = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const t = toast.loading(`Checking ${ids.length} key${ids.length > 1 ? "s" : ""}…`);
+    let ok = 0, fail = 0;
+    await Promise.all(ids.map(async (id) => {
+      const { error } = await supabase.functions.invoke("check-key-health", { body: { key_id: id } });
+      if (error) fail++; else ok++;
+    }));
+    setBulkBusy(false);
+    toast.dismiss(t);
+    if (fail === 0) toast.success(`Checked ${ok} key${ok > 1 ? "s" : ""}`);
+    else toast.warning(`Checked ${ok}, failed ${fail}`);
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} key${ids.length > 1 ? "s" : ""}? This cannot be undone.`)) return;
+    setBulkBusy(true);
+    const { error } = await supabase.from("api_keys").delete().in("id", ids);
+    setBulkBusy(false);
+    if (error) toast.error(error.message);
+    else { toast.success(`Deleted ${ids.length} key${ids.length > 1 ? "s" : ""}`); clearSelection(); }
+  };
+
   return (
     <div className="space-y-6 pb-20">
       {/* Stats */}
@@ -178,6 +233,23 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* Selection toolbar */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/30 px-3 py-2 text-sm">
+          <label className="flex cursor-pointer items-center gap-2">
+            <Checkbox checked={allFilteredSelected} onCheckedChange={toggleSelectAllFiltered} />
+            <span className="text-muted-foreground">
+              {selected.size > 0
+                ? `${selected.size} selected`
+                : `Select all ${filtered.length}`}
+            </span>
+          </label>
+          {selected.size > 0 && (
+            <button onClick={clearSelection} className="text-xs text-muted-foreground hover:text-foreground">Clear</button>
+          )}
+        </div>
+      )}
+
       {/* List */}
       {loading ? (
         <div className="py-20 text-center text-sm text-muted-foreground">Loading keys…</div>
@@ -187,15 +259,41 @@ export default function Dashboard() {
           <Button onClick={() => navigate("/add")}><Plus className="mr-2 h-4 w-4" />Add Key</Button>
         </div>
       ) : (
-        <KeyGrid items={filtered} snapshots={snapshots} />
+        <KeyGrid items={filtered} snapshots={snapshots} selected={selected} onToggle={toggleSelect} />
       )}
 
-      {/* Floating add */}
-      <Link to="/add" className="fixed bottom-6 right-6 z-30">
-        <Button size="lg" className="h-14 rounded-full px-5 shadow-xl">
-          <Plus className="mr-2 h-5 w-5" />Add Key
-        </Button>
-      </Link>
+      {/* Sticky bulk-action bar */}
+      {selected.size > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur">
+          <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center gap-2 text-sm">
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={clearSelection} title="Clear">
+                <X className="h-4 w-4" />
+              </Button>
+              <span className="font-medium">{selected.size} selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" onClick={bulkCheck} disabled={bulkBusy}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${bulkBusy ? "animate-spin" : ""}`} />
+                Check / refresh
+              </Button>
+              <Button size="sm" variant="destructive" onClick={bulkDelete} disabled={bulkBusy}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating add (hidden when bulk bar visible) */}
+      {selected.size === 0 && (
+        <Link to="/add" className="fixed bottom-6 right-6 z-30">
+          <Button size="lg" className="h-14 rounded-full px-5 shadow-xl">
+            <Plus className="mr-2 h-5 w-5" />Add Key
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
