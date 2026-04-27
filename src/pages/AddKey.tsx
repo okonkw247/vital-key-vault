@@ -42,7 +42,7 @@ export default function AddKey() {
     if (error) { toast.error(error.message); setSaving(false); return; }
 
     await supabase.from("key_events").insert({
-      key_id: data.id, event_type: "added", message: `Added ${provider} key`,
+      key_id: data.id, owner_github: github.username, event_type: "added", message: `Added ${provider} key`,
     });
     // Fire health check (don't await)
     supabase.functions.invoke("check-key-health", { body: { key_id: data.id } });

@@ -74,7 +74,7 @@ export default function KeyDetail() {
     }).eq("id", key.id);
     if (error) { toast.error(error.message); return; }
     await supabase.from("key_events").insert({
-      key_id: key.id, event_type: "replaced", message: "Key value replaced"
+      key_id: key.id, owner_github: key.owner_github, event_type: "replaced", message: "Key value replaced"
     });
     setReplaceOpen(false); setNewKey(""); setRevealed(null); setShow(false);
     supabase.functions.invoke("check-key-health", { body: { key_id: key.id } });
