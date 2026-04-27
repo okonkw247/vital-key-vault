@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Activity, AlertTriangle, BatteryWarning, CheckCircle2, Copy, HelpCircle, Plus, RefreshCw, Search, Trash2, Upload } from "lucide-react";
+import { Activity, AlertTriangle, BatteryWarning, CheckCircle2, Copy, HelpCircle, Plus, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { maskKey, statusBg, statusColor, timeAgo } from "@/lib/format";
 import type { Tables } from "@/integrations/supabase/types";
