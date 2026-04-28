@@ -1,5 +1,19 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Robots-Tag", "value": "all" }
+      ]
+    }
+  ],
   "rewrites": [
+    { "source": "/og-image.png", "destination": "/og-image.png" },
+    { "source": "/robots.txt", "destination": "/robots.txt" },
+    { "source": "/manifest.json", "destination": "/manifest.json" },
+    { "source": "/icon.svg", "destination": "/icon.svg" },
+    { "source": "/icon-192.png", "destination": "/icon-192.png" },
+    { "source": "/icon-512.png", "destination": "/icon-512.png" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
