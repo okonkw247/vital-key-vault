@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Copy, RefreshCw } from "lucide-react";
+import { Copy, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
@@ -11,11 +12,19 @@ const FUNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-active-k
 export default function Integration() {
   const { github } = useAuth();
   const [token, setToken] = useState<string | null>(null);
+  const [show, setShow] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     if (!github) return;
-    const { data } = await supabase.from("user_tokens").select("access_token").eq("owner_github", github.username).maybeSingle();
+    setLoading(true);
+    const { data } = await supabase
+      .from("user_tokens")
+      .select("access_token")
+      .eq("owner_github", github.username)
+      .maybeSingle();
     setToken(data?.access_token ?? null);
+    setLoading(false);
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [github?.username]);
 
@@ -23,14 +32,23 @@ export default function Integration() {
     if (!github) return;
     if (!confirm("Regenerate access token? Existing integrations will stop working.")) return;
     const newTok = crypto.randomUUID().replace(/-/g, "");
-    const { error } = await supabase.from("user_tokens").update({ access_token: newTok }).eq("owner_github", github.username);
+    const { error } = await supabase
+      .from("user_tokens")
+      .update({ access_token: newTok })
+      .eq("owner_github", github.username);
     if (error) { toast.error(error.message); return; }
-    setToken(newTok); toast.success("Token regenerated");
+    setToken(newTok);
+    toast.success("Token regenerated");
   };
 
-  const copy = (s: string) => { navigator.clipboard.writeText(s); toast.success("Copied"); };
+  const copy = (s: string) => {
+    navigator.clipboard.writeText(s);
+    toast.success("Copied to clipboard");
+  };
 
+  const masked = token ? `${"•".repeat(Math.max(0, token.length - 4))}${token.slice(-4)}` : "";
   const url = token ? `${FUNC_URL}?provider=openrouter&token=${token}` : "";
+
   const nextSnippet = `// Next.js / React
 const r = await fetch("${url}");
 const { key, credits_remaining, status } = await r.json();
@@ -48,22 +66,35 @@ https.get("${url}", (res) => {
 });`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6 px-1">
       <h1 className="text-2xl font-semibold tracking-tight">Integration API</h1>
       <p className="text-sm text-muted-foreground">Use this endpoint in any of your projects to always get your current active key at runtime.</p>
 
       <div className="vault-card p-5">
         <div className="mb-2 text-sm text-muted-foreground">Your access token</div>
-        <div className="flex items-center gap-2">
-          <code className="mono flex-1 truncate rounded bg-secondary/60 px-3 py-2 text-sm">{token ?? "—"}</code>
-          <Button variant="outline" size="icon" onClick={() => token && copy(token)}><Copy className="h-4 w-4" /></Button>
-          <Button variant="outline" size="icon" onClick={regen} title="Regenerate"><RefreshCw className="h-4 w-4" /></Button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Input
+            readOnly
+            value={loading ? "Loading…" : (show ? (token ?? "") : masked)}
+            className="mono flex-1"
+          />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={() => setShow((v) => !v)} title={show ? "Hide" : "Show"}>
+              {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            <Button variant="outline" size="icon" onClick={() => token && copy(token)} title="Copy">
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={regen} title="Regenerate">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
       <div className="vault-card p-5">
         <div className="mb-2 text-sm text-muted-foreground">Endpoint</div>
-        <div className="mono break-all rounded bg-secondary/60 p-3 text-sm">
+        <div className="mono break-all rounded bg-secondary/60 p-3 text-xs sm:text-sm">
           GET {FUNC_URL}?provider=openrouter&token=YOUR_TOKEN
         </div>
         <div className="mt-3 text-xs text-muted-foreground">
