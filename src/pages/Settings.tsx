@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 const PROVIDERS = ["openrouter", "groq", "gemini", "openai"];
@@ -37,11 +38,14 @@ export default function Settings() {
     if (error) toast.error(error.message); else toast.success("Saved");
   };
 
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   const deleteAll = async () => {
     if (!github) return;
-    if (!confirm("Delete ALL your keys? This cannot be undone.")) return;
+    if (deleteConfirm !== "DELETE") return;
     const { error } = await supabase.from("api_keys").delete().eq("owner_github", github.username);
-    if (error) toast.error(error.message); else toast.success("All keys deleted");
+    if (error) toast.error(error.message);
+    else { toast.success("All keys deleted"); setDeleteOpen(false); setDeleteConfirm(""); }
   };
 
   const [rotating, setRotating] = useState(false);
@@ -139,8 +143,23 @@ export default function Settings() {
 
       <section className="vault-card border-destructive/40 p-5 space-y-3">
         <h2 className="font-medium text-destructive">Danger zone</h2>
-        <Button variant="destructive" onClick={deleteAll}>Delete all my keys</Button>
+        <Button variant="destructive" onClick={() => setDeleteOpen(true)}>Delete all my keys</Button>
       </section>
+
+      <Dialog open={deleteOpen} onOpenChange={(o) => { setDeleteOpen(o); if (!o) setDeleteConfirm(""); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle className="text-destructive">Delete all keys?</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            <p className="text-muted-foreground">This permanently removes every API key in your vault. This cannot be undone.</p>
+            <Label>Type <span className="mono font-semibold text-foreground">DELETE</span> to confirm</Label>
+            <Input value={deleteConfirm} onChange={(e) => setDeleteConfirm(e.target.value)} placeholder="DELETE" />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setDeleteOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={deleteAll} disabled={deleteConfirm !== "DELETE"}>Delete everything</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

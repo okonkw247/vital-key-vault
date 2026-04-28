@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Activity, AlertTriangle, BatteryWarning, CheckCircle2, Copy, HelpCircle, Plus, RefreshCw, Search, Trash2, Upload, X } from "lucide-react";
+import { Activity, AlertTriangle, BatteryWarning, CheckCircle2, Copy, HelpCircle, Plus, RefreshCw, Search, ShieldCheck, Trash2, Upload, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -253,10 +253,23 @@ export default function Dashboard() {
       {/* List */}
       {loading ? (
         <div className="py-20 text-center text-sm text-muted-foreground">Loading keys…</div>
+      ) : keys.length === 0 ? (
+        <div className="vault-card flex flex-col items-center gap-4 py-20 text-center">
+          <ShieldCheck className="text-primary" style={{ width: 80, height: 80 }} strokeWidth={1.5} />
+          <div>
+            <div className="text-2xl font-bold text-foreground">No keys yet</div>
+            <div className="mt-1 text-sm" style={{ color: "#555" }}>Add your first API key to get started</div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Button onClick={() => navigate("/add")}><Plus className="mr-2 h-4 w-4" />Add First Key</Button>
+            <Button variant="outline" onClick={() => navigate("/import")}><Upload className="mr-2 h-4 w-4" />Bulk Import</Button>
+          </div>
+        </div>
       ) : filtered.length === 0 ? (
-        <div className="vault-card flex flex-col items-center gap-3 py-20 text-center">
-          <p className="text-muted-foreground">No keys yet. Add your first one.</p>
-          <Button onClick={() => navigate("/add")}><Plus className="mr-2 h-4 w-4" />Add Key</Button>
+        <div className="vault-card flex flex-col items-center gap-3 py-16 text-center">
+          <Search className="h-10 w-10 text-muted-foreground" />
+          <p className="text-muted-foreground">No keys match your search</p>
+          <Button variant="outline" size="sm" onClick={() => { setSearch(""); setCategory("All"); }}>Clear filters</Button>
         </div>
       ) : (
         <KeyGrid items={filtered} snapshots={snapshots} selected={selected} onToggle={toggleSelect} />
